@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"log"
+	"time"
 )
 
 type Service struct {
@@ -21,14 +22,14 @@ func (service *Service) Start() {
 	_, err := service.pool.Exec(context.Background(), `
 	CREATE TABLE IF NOT EXISTS messages (
 		id 			 BIGSERIAL,
-		sender_id    INTEGER,
-		recipient_id INTEGER,
+		sender_id    INTEGER NOT NULL,
+		recipient_id INTEGER NOT NULL,
    		message		 TEXT NOT NULL,
-   		time    	 TIMESTAMP NOT NULL
+   		time    	 TIMESTAMP DEFAULT now() NOT NULL
 	);
 `)
 	if err != nil {
-		log.Print(err)
+		log.Print("repo Start()", err)
 	}
 }
 
@@ -167,6 +168,86 @@ func (service *Service) AddNewHistory(model ModelOperationsLog) (err error) {
 	return nil
 }
 
+func (service *Service) AddMassage(model ModelMassage) (err error) {
+	log.Print("started add new Massage")
+	log.Print("add model to db")
+	_, err = service.pool.Exec(context.Background(), `
+	INSERT INTO messages(sender_id, recipient_id, message)
+	VALUES ($1, $2, $3)`,
+		model.SenderID,
+		model.RecipientID,
+		model.Message,
+	)
+	if err != nil {
+		log.Printf("can't exec insert add message: %v", err)
+		return err
+	}
+	log.Print("saved model to db")
+	log.Print("finish add model to db")
+	return nil
+}
+
+func (service *Service) GetMessageByRecipientID(mm ModelMassage) (models []ModelMassage, err error) {
+	log.Print("started get Massage")
+	log.Print("get model to db")
+	rows, err := service.pool.Query(context.Background(), `
+	SELECT id, massage, sender_id, recipient_id FROM messages WHERE sender_id = $1 AND recipient_id = $2; `,
+		mm.SenderID,
+		mm.RecipientID,
+	)
+	if err != nil {
+		log.Printf("can't query select message: %v", err)
+		return nil, err
+	}
+
+	for rows.Next() {
+		model := ModelMassage{}
+		err = rows.Scan(
+			&model.ID,
+			&model.SenderID,
+			&model.RecipientID,
+			&model.Time,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("can't get message from db: %w", err)
+		}
+		models = append(models, model)
+	}
+	log.Print("get model to db")
+	log.Print("finish get model to db")
+	return nil, nil
+}
+
+func (service *Service) GetMessageAll(senderID int) (models []ModelMassage, err error) {
+	log.Print("started get Massage")
+	log.Print("get model to db")
+	rows, err := service.pool.Query(context.Background(), `
+	SELECT id, massage, sender_id, recipient_id FROM messages WHERE sender_id = $1 OR recipient_id = $1 GROUP BY sender_id, recipient_id; `,
+		senderID,
+	)
+	if err != nil {
+		log.Printf("can't query select message: %v", err)
+		return nil, err
+	}
+
+	for rows.Next() {
+		model := ModelMassage{}
+		err = rows.Scan(
+			&model.ID,
+			&model.SenderID,
+			&model.RecipientID,
+			&model.Time,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("can't get message from db: %w", err)
+		}
+		models = append(models, model)
+	}
+	log.Print("get model to db")
+	log.Print("finish get model to db")
+	return nil, nil
+}
+
 type ModelOperationsLog struct {
 	Id              int    `json:"id"`
 	Name            string `json:"name"`
@@ -177,6 +258,14 @@ type ModelOperationsLog struct {
 	BalanceNew      int64  `json:"balancenew"`
 	Time            int64  `json:"time"`
 	OwnerID         int64  `json:"ownerid"`
+}
+
+type ModelMassage struct {
+	ID          int       `json:"id"`
+	SenderID    string    `json:"sender_id"`
+	RecipientID string    `json:"recipient_id"`
+	Message     string    `json:"message"`
+	Time        time.Time `json:"time"`
 }
 
 type ModelTransferMoneyCardToCard struct {

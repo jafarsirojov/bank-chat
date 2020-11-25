@@ -24,7 +24,7 @@ func (m *MainServer) ServeHTTP(writer http.ResponseWriter, request *http.Request
 	m.exactMux.ServeHTTP(writer, request)
 }
 
-func (m *MainServer) HandleGetAllShowOperationsLog(writer http.ResponseWriter, request *http.Request) {
+func (m *MainServer) HandleGetMessageAll(writer http.ResponseWriter, request *http.Request) {
 	log.Print("start handler chat")
 	authentication, ok := jwt.FromContext(request.Context()).(*auth.Auth)
 	if !ok {
@@ -38,26 +38,26 @@ func (m *MainServer) HandleGetAllShowOperationsLog(writer http.ResponseWriter, r
 		return
 	}
 	log.Print(authentication)
-	if authentication.Id == 0 {
-		log.Print("admin")
-		log.Print("all chat")
-		models, err := m.cardsSvc.All()
-		if err != nil {
-			log.Print("can't get all chat")
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		log.Print(models)
-		err = rest.WriteJSONBody(writer, models)
-		if err != nil {
-			log.Print("can't write json get all chat")
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		return
-	}
+	//if authentication.Id == 0 {
+	//	log.Print("admin")
+	//	log.Print("all chat")
+	//	models, err := m.cardsSvc.All()
+	//	if err != nil {
+	//		log.Print("can't get all chat")
+	//		writer.WriteHeader(http.StatusInternalServerError)
+	//		return
+	//	}
+	//	log.Print(models)
+	//	err = rest.WriteJSONBody(writer, models)
+	//	if err != nil {
+	//		log.Print("can't write json get all chat")
+	//		writer.WriteHeader(http.StatusInternalServerError)
+	//		return
+	//	}
+	//	return
+	//}
 	log.Print("all chat cards user")
-	models, err := m.cardsSvc.ShowOperationsLogByOwnerId(authentication.Id)
+	models, err := m.cardsSvc.GetMessageAll(authentication.Id)
 	if err != nil {
 		log.Print("can't get all chat")
 		writer.WriteHeader(http.StatusInternalServerError)
@@ -73,7 +73,7 @@ func (m *MainServer) HandleGetAllShowOperationsLog(writer http.ResponseWriter, r
 	log.Print("finish chat handler")
 }
 
-func (m *MainServer) HandleGetShowOperationsLogById(writer http.ResponseWriter, request *http.Request) {
+func (m *MainServer) HandleGetMessaegeByRecipientID(writer http.ResponseWriter, request *http.Request) {
 	authentication, ok := jwt.FromContext(request.Context()).(*auth.Auth)
 	if !ok {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -101,7 +101,7 @@ func (m *MainServer) HandleGetShowOperationsLogById(writer http.ResponseWriter, 
 	}
 	if authentication.Id == 0 {
 		log.Print("admin")
-		models, err := m.cardsSvc.AdminShowTransferLogByIdCadr(id)
+		models, err := m.cardsSvc.GetMessageByRecipientID(id)
 		if err != nil {
 			log.Printf("can't chat %d", err)
 			writer.WriteHeader(http.StatusInternalServerError)
@@ -131,7 +131,7 @@ func (m *MainServer) HandleGetShowOperationsLogById(writer http.ResponseWriter, 
 	}
 }
 
-func (m *MainServer) HandlePostAddHistory(writer http.ResponseWriter, request *http.Request) {
+func (m *MainServer) HandlePostAddMassage(writer http.ResponseWriter, request *http.Request) {
 	log.Print("starting save new chat")
 	authentication, ok := jwt.FromContext(request.Context()).(*auth.Auth)
 	if !ok {
@@ -163,7 +163,7 @@ func (m *MainServer) HandlePostAddHistory(writer http.ResponseWriter, request *h
 		return
 	}
 	log.Print("start func add new chat is handler")
-	err = m.cardsSvc.AddNewHistory(model)
+	err = m.cardsSvc.AddMassage(model)
 	if err != nil {
 		log.Printf("can't add (save) chat %d", err)
 		writer.WriteHeader(http.StatusInternalServerError)

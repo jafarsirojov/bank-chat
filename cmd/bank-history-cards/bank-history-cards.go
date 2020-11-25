@@ -55,20 +55,20 @@ func main() {
 	usersSvc.Start()
 	exactMux := mux.NewExactMux()
 	server := app.NewMainServer(exactMux, usersSvc)
-	exactMux.GET("/api/chat",
-		server.HandleGetAllShowOperationsLog,
+	exactMux.GET("/api/chat/message/all",
+		server.HandleGetMessageAll,
 		jwtMiddleware,
 		requestIdier,
 		logger,
 	)
-	exactMux.GET("/api/chat/cards/{id}",
-		server.HandleGetShowOperationsLogById,
+	exactMux.GET("/api/chat/message/{recipient_id}",
+		server.HandleGetMessaegeByRecipientID,
 		jwtMiddleware,
 		requestIdier,
 		logger,
 	)
-	exactMux.POST("/api/chat",
-		server.HandlePostAddHistory,
+	exactMux.POST("/api/chat/message",
+		server.HandlePostAddMassage,
 		jwtMiddleware,
 		requestIdier,
 		logger,
