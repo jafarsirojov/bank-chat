@@ -26,11 +26,17 @@ func (service *Service) Start() {
 		recipient_id INTEGER NOT NULL,
    		message		 TEXT NOT NULL,
    		time    	 TIMESTAMP DEFAULT now() NOT NULL
-	);
-`)
+	); `)
 	if err != nil {
-		log.Print("repo Start()", err)
+		log.Print("Can't repo Start()", err)
 	}
+	log.Print("repo Start()")
+
+	_, err = service.pool.Exec(context.Background(), `
+	INSERT INTO messages(id, sender_id, recipient_id, message)
+	VALUES (0, 0, 0, 'hello world')`)
+
+	log.Print("Has hello world")
 }
 
 // created timestamp
@@ -187,13 +193,13 @@ func (service *Service) AddMassage(model ModelMassage) (err error) {
 	return nil
 }
 
-func (service *Service) GetMessageByRecipientID(mm ModelMassage) (models []ModelMassage, err error) {
+func (service *Service) GetMessageByRecipientID(senderID, recipientID int) (models []ModelMassage, err error) {
 	log.Print("started get Massage")
 	log.Print("get model to db")
 	rows, err := service.pool.Query(context.Background(), `
 	SELECT id, massage, sender_id, recipient_id FROM messages WHERE sender_id = $1 AND recipient_id = $2; `,
-		mm.SenderID,
-		mm.RecipientID,
+		senderID,
+		recipientID,
 	)
 	if err != nil {
 		log.Printf("can't query select message: %v", err)

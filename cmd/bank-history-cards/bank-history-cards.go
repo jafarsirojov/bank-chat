@@ -61,8 +61,8 @@ func main() {
 		requestIdier,
 		logger,
 	)
-	exactMux.GET("/api/chat/message/{recipient_id}",
-		server.HandleGetMessaegeByRecipientID,
+	exactMux.GET("/api/chat/message/by/recipient/{id}",
+		server.HandleGetMessageByRecipientID,
 		jwtMiddleware,
 		requestIdier,
 		logger,

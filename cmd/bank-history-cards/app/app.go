@@ -73,7 +73,7 @@ func (m *MainServer) HandleGetMessageAll(writer http.ResponseWriter, request *ht
 	log.Print("finish chat handler")
 }
 
-func (m *MainServer) HandleGetMessaegeByRecipientID(writer http.ResponseWriter, request *http.Request) {
+func (m *MainServer) HandleGetMessageByRecipientID(writer http.ResponseWriter, request *http.Request) {
 	authentication, ok := jwt.FromContext(request.Context()).(*auth.Auth)
 	if !ok {
 		writer.WriteHeader(http.StatusBadRequest)
@@ -93,30 +93,31 @@ func (m *MainServer) HandleGetMessaegeByRecipientID(writer http.ResponseWriter, 
 		writer.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	id, err := strconv.Atoi(value)
+	recipientID, err := strconv.Atoi(value)
 	if err != nil {
 		log.Printf("can't strconv atoi: %d", err)
 		writer.WriteHeader(http.StatusBadRequest)
 		return
 	}
-	if authentication.Id == 0 {
-		log.Print("admin")
-		models, err := m.cardsSvc.GetMessageByRecipientID(id)
-		if err != nil {
-			log.Printf("can't chat %d", err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		log.Print(models)
-		err = rest.WriteJSONBody(writer, models)
-		if err != nil {
-			log.Printf("can't write json get all chat %d", err)
-			writer.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		return
-	}
-	models, err := m.cardsSvc.UserShowTransferLogByIdCard(id, authentication.Id)
+	//if authentication.Id == 0 {
+	//	log.Print("admin")
+	//	models, err := m.cardsSvc.GetMessageByRecipientID(id)
+	//	if err != nil {
+	//		log.Printf("can't chat %d", err)
+	//		writer.WriteHeader(http.StatusInternalServerError)
+	//		return
+	//	}
+	//	log.Print(models)
+	//	err = rest.WriteJSONBody(writer, models)
+	//	if err != nil {
+	//		log.Printf("can't write json get all chat %d", err)
+	//		writer.WriteHeader(http.StatusInternalServerError)
+	//		return
+	//	}
+	//	return
+	//}
+
+	models, err := m.cardsSvc.GetMessageByRecipientID(authentication.Id, recipientID)
 	if err != nil {
 		log.Printf("can't chat is not owner %d", err)
 		writer.WriteHeader(http.StatusBadRequest)
@@ -146,7 +147,7 @@ func (m *MainServer) HandlePostAddMassage(writer http.ResponseWriter, request *h
 	}
 	log.Print(authentication)
 	log.Print("post add chat transfer")
-	model := chat.ModelOperationsLog{}
+	model := chat.ModelMassage{}
 
 	log.Print("start read json body is save new chat")
 	err := rest.ReadJSONBody(request, &model)
@@ -157,7 +158,7 @@ func (m *MainServer) HandlePostAddMassage(writer http.ResponseWriter, request *h
 	}
 	log.Print("finish read json body is save new chat")
 	log.Println(model)
-	if model.Id != 0 {
+	if model.ID != 0 {
 		log.Printf("id card not 0!")
 		writer.WriteHeader(http.StatusBadRequest)
 		return
