@@ -21,7 +21,7 @@ func (service *Service) Start() {
 	//defer conn.Release()
 	_, err := service.pool.Exec(context.Background(), `
 	CREATE TABLE IF NOT EXISTS messages (
-		id 			 BIGSERIAL,
+		id 			 BIGSERIAL unique,
 		sender_id    INTEGER NOT NULL,
 		recipient_id INTEGER NOT NULL,
    		message		 TEXT NOT NULL,
@@ -34,7 +34,10 @@ func (service *Service) Start() {
 
 	_, err = service.pool.Exec(context.Background(), `
 	INSERT INTO messages(id, sender_id, recipient_id, message)
-	VALUES (0, 0, 0, 'hello world')`)
+	VALUES (0, 0, 0, 'hello world');`)
+	if err != nil {
+		log.Println("can't exec, insert message")
+	}
 
 	log.Print("Has hello world")
 }
@@ -197,7 +200,7 @@ func (service *Service) GetMessageByRecipientID(senderID, recipientID int) (mode
 	log.Print("started get Massage")
 	log.Print("get model to db")
 	rows, err := service.pool.Query(context.Background(), `
-	SELECT id, massage, sender_id, recipient_id FROM messages WHERE sender_id = $1 AND recipient_id = $2; `,
+	SELECT id, message, sender_id, recipient_id FROM messages WHERE sender_id = $1 AND recipient_id = $2; `,
 		senderID,
 		recipientID,
 	)
@@ -228,7 +231,7 @@ func (service *Service) GetMessageAll(senderID int) (models []ModelMassage, err 
 	log.Print("started get Massage")
 	log.Print("get model to db")
 	rows, err := service.pool.Query(context.Background(), `
-	SELECT id, massage, sender_id, recipient_id FROM messages WHERE sender_id = $1 OR recipient_id = $1 GROUP BY sender_id, recipient_id; `,
+	SELECT sender_id, recipient_id FROM messages WHERE sender_id = $1 OR recipient_id = $1 GROUP BY sender_id, recipient_id; `,
 		senderID,
 	)
 	if err != nil {
@@ -239,10 +242,10 @@ func (service *Service) GetMessageAll(senderID int) (models []ModelMassage, err 
 	for rows.Next() {
 		model := ModelMassage{}
 		err = rows.Scan(
-			&model.ID,
+			//&model.ID,
 			&model.SenderID,
 			&model.RecipientID,
-			&model.Time,
+			//&model.Time,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("can't get message from db: %w", err)
@@ -251,7 +254,7 @@ func (service *Service) GetMessageAll(senderID int) (models []ModelMassage, err 
 	}
 	log.Print("get model to db")
 	log.Print("finish get model to db")
-	return nil, nil
+	return models, nil
 }
 
 type ModelOperationsLog struct {
@@ -267,11 +270,12 @@ type ModelOperationsLog struct {
 }
 
 type ModelMassage struct {
-	ID          int       `json:"id"`
-	SenderID    string    `json:"sender_id"`
-	RecipientID string    `json:"recipient_id"`
-	Message     string    `json:"message"`
-	Time        time.Time `json:"time"`
+	ID            int       `json:"id"`
+	SenderID      int       `json:"sender_id"`
+	RecipientID   int       `json:"recipient_id"`
+	RecipientName string    `json:"recipient_name"`
+	Message       string    `json:"message"`
+	Time          time.Time `json:"time"`
 }
 
 type ModelTransferMoneyCardToCard struct {

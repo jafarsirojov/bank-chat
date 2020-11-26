@@ -3,12 +3,16 @@ package app
 import (
 	"bank-chat/pkg/core/auth"
 	"bank-chat/pkg/core/chat"
+	"bytes"
+	"context"
+	"fmt"
 	"github.com/jafarsirojov/mux/pkg/mux"
 	"github.com/jafarsirojov/mux/pkg/mux/middleware/jwt"
 	"github.com/jafarsirojov/rest/pkg/rest"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 type MainServer struct {
@@ -64,6 +68,14 @@ func (m *MainServer) HandleGetMessageAll(writer http.ResponseWriter, request *ht
 		return
 	}
 	log.Print(models)
+	token:= request.Header.Get("Authorization")
+	log.Printf("Bearer token %s",token)
+	token = token[7:]
+	log.Printf("token %s",token)
+
+	for _, model := range models {
+		err := getUserToSvcAuth(model.RecipientID, token)
+	}
 	err = rest.WriteJSONBody(writer, models)
 	if err != nil {
 		log.Print("can't write json get all chat")
@@ -172,3 +184,54 @@ func (m *MainServer) HandlePostAddMassage(writer http.ResponseWriter, request *h
 	}
 	log.Print("finish add new chat")
 }
+
+func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) (err error) {
+	log.Print("starting sender request to history Svc")
+	//requestBody, err := json.Marshal(data)
+	//if err != nil {
+	//	return fmt.Errorf("can't encode requestBody %v: %w", data, err)
+	//}
+	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+
+	request, err := http.NewRequestWithContext(
+		ctx,
+		http.MethodGet,
+		fmt.Sprintf("%s/api/users/%d", addrAuthSvc, id),
+		bytes.NewBuffer(nil),
+	)
+	if err != nil {
+		return fmt.Errorf("can't create request: %w", err)
+	}
+
+	request.Header.Set("Content-Type", "application/json")
+	request.Header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	log.Print("started sender request to auth Svc")
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		return fmt.Errorf("can't send request: %w", err)
+	}
+	defer response.Body.Close()
+
+	log.Print("finish sender request to history Svc")
+
+	response.Body.Read()
+	switch response.StatusCode {
+	case 200:
+		log.Print("200 request to auth Svc")
+		return nil
+	case 400:
+		log.Print("400 request to auth Svc")
+		return fmt.Errorf("bad request is server: %s", addrAuthSvc)
+	case 401:
+		log.Print("401 unauthorized to auth Svc")
+		return fmt.Errorf("unauthorized is server: %s", addrAuthSvc)
+	case 500:
+		log.Print("500 request to auth Svc")
+		return fmt.Errorf("internel server error is server: %s", addrAuthSvc)
+	default:
+		log.Printf("response status code: %s", err)
+		return fmt.Errorf("err: %s", addrAuthSvc)
+	}
+}
+
+const addrAuthSvc = "http://localhost:9011"
