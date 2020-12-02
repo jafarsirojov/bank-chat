@@ -200,7 +200,7 @@ func (service *Service) GetMessageByRecipientID(senderID, recipientID int) (mode
 	log.Print("started get Massage")
 	log.Print("get model to db")
 	rows, err := service.pool.Query(context.Background(), `
-	SELECT id, message, sender_id, recipient_id FROM messages WHERE (sender_id = $1 AND recipient_id = $2) OR (sender_id = $2 AND recipient_id = $1); `,
+	SELECT id, message, sender_id, recipient_id, time FROM messages WHERE (sender_id = $1 AND recipient_id = $2) OR (sender_id = $2 AND recipient_id = $1); `,
 		senderID,
 		recipientID,
 	)
@@ -213,6 +213,7 @@ func (service *Service) GetMessageByRecipientID(senderID, recipientID int) (mode
 		model := ModelMassage{}
 		err = rows.Scan(
 			&model.ID,
+			&model.Message,
 			&model.SenderID,
 			&model.RecipientID,
 			&model.Time,
@@ -224,7 +225,7 @@ func (service *Service) GetMessageByRecipientID(senderID, recipientID int) (mode
 	}
 	log.Print("get model to db")
 	log.Print("finish get model to db")
-	return nil, nil
+	return models, nil
 }
 
 func (service *Service) GetMessageAll(senderID int) (models []ModelMassage, err error) {

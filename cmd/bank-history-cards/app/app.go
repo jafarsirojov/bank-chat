@@ -13,7 +13,6 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 type MainServer struct {
@@ -74,13 +73,19 @@ func (m *MainServer) HandleGetMessageAll(writer http.ResponseWriter, request *ht
 	token = token[7:]
 	log.Printf("token %s", token)
 
-	for _, model := range models {
-		us, err := getUserToSvcAuth(model.RecipientID, token)
+	for i, _ := range models {
+		us, err := GetUserToSvcAuth(models[i].RecipientID, token)
 		if err != nil {
-			log.Println("err getUserToSvcAuth", err)
+			log.Println("err GetUserToSvcAuth", err)
 			continue
 		}
-		model.RecipientName = us.Name
+		models[i].RecipientName = us.Name
+	}
+
+	if models == nil {
+		log.Print("not found massage")
+		writer.WriteHeader(http.StatusNotFound)
+		return
 	}
 
 	err = rest.WriteJSONBody(writer, models)
@@ -192,22 +197,22 @@ func (m *MainServer) HandlePostAddMassage(writer http.ResponseWriter, request *h
 	log.Print("finish add new chat")
 }
 
-func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) (us User, err error) {
+func GetUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) (us *User, err error) {
 	log.Print("starting sender request to history Svc")
 	//requestBody, err := json.Marshal(data)
 	//if err != nil {
 	//	return fmt.Errorf("can't encode requestBody %v: %w", data, err)
 	//}
-	ctx, _ := context.WithTimeout(context.Background(), time.Second)
+	//ctx, _ := context.WithTimeout(context.Background(), time.Second)
 
 	request, err := http.NewRequestWithContext(
-		ctx,
+		context.Background(),
 		http.MethodGet,
 		fmt.Sprintf("%s/api/users/%d", addrAuthSvc, id),
 		bytes.NewBuffer(nil),
 	)
 	if err != nil {
-		return User{}, fmt.Errorf("can't create request: %w", err)
+		return nil, fmt.Errorf("can't create request: %w", err)
 	}
 
 	request.Header.Set("Content-Type", "application/json")
@@ -215,7 +220,7 @@ func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) 
 	log.Print("started sender request to auth Svc")
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return User{}, fmt.Errorf("can't send request: %w", err)
+		return nil, fmt.Errorf("can't send request: %w", err)
 	}
 	defer response.Body.Close()
 
@@ -223,8 +228,8 @@ func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) 
 
 	err = json.NewDecoder(response.Body).Decode(&us)
 	if err != nil {
-		log.Println("Can't getUserToSvcAuth, json.NewDecoder(response.Body).Decode(&us)", err)
-		return User{}, err
+		log.Println("Can't GetUserToSvcAuth, json.NewDecoder(response.Body).Decode(&us)", err)
+		return nil, err
 	}
 
 	switch response.StatusCode {
@@ -233,16 +238,16 @@ func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) 
 		return us, nil
 	case 400:
 		log.Print("400 request to auth Svc")
-		return User{}, fmt.Errorf("bad request is server: %s", addrAuthSvc)
+		return nil, fmt.Errorf("bad request is server: %s", addrAuthSvc)
 	case 401:
 		log.Print("401 unauthorized to auth Svc")
-		return User{}, fmt.Errorf("unauthorized is server: %s", addrAuthSvc)
+		return nil, fmt.Errorf("unauthorized is server: %s", addrAuthSvc)
 	case 500:
 		log.Print("500 request to auth Svc")
-		return User{}, fmt.Errorf("internel server error is server: %s", addrAuthSvc)
+		return nil, fmt.Errorf("internel server error is server: %s", addrAuthSvc)
 	default:
 		log.Printf("response status code: %s", err)
-		return User{}, fmt.Errorf("err: %s", addrAuthSvc)
+		return nil, fmt.Errorf("err: %s", addrAuthSvc)
 	}
 }
 
