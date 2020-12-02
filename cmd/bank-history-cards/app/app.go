@@ -5,6 +5,7 @@ import (
 	"bank-chat/pkg/core/chat"
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/jafarsirojov/mux/pkg/mux"
 	"github.com/jafarsirojov/mux/pkg/mux/middleware/jwt"
@@ -68,14 +69,20 @@ func (m *MainServer) HandleGetMessageAll(writer http.ResponseWriter, request *ht
 		return
 	}
 	log.Print(models)
-	token:= request.Header.Get("Authorization")
-	log.Printf("Bearer token %s",token)
+	token := request.Header.Get("Authorization")
+	log.Printf("Bearer token %s", token)
 	token = token[7:]
-	log.Printf("token %s",token)
+	log.Printf("token %s", token)
 
 	for _, model := range models {
-		err := getUserToSvcAuth(model.RecipientID, token)
+		us, err := getUserToSvcAuth(model.RecipientID, token)
+		if err != nil {
+			log.Println("err getUserToSvcAuth", err)
+			continue
+		}
+		model.RecipientName = us.Name
 	}
+
 	err = rest.WriteJSONBody(writer, models)
 	if err != nil {
 		log.Print("can't write json get all chat")
@@ -185,7 +192,7 @@ func (m *MainServer) HandlePostAddMassage(writer http.ResponseWriter, request *h
 	log.Print("finish add new chat")
 }
 
-func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) (err error) {
+func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) (us User, err error) {
 	log.Print("starting sender request to history Svc")
 	//requestBody, err := json.Marshal(data)
 	//if err != nil {
@@ -200,7 +207,7 @@ func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) 
 		bytes.NewBuffer(nil),
 	)
 	if err != nil {
-		return fmt.Errorf("can't create request: %w", err)
+		return User{}, fmt.Errorf("can't create request: %w", err)
 	}
 
 	request.Header.Set("Content-Type", "application/json")
@@ -208,30 +215,43 @@ func getUserToSvcAuth( /*data cards.ModelOperationsLog,*/ id int, token string) 
 	log.Print("started sender request to auth Svc")
 	response, err := http.DefaultClient.Do(request)
 	if err != nil {
-		return fmt.Errorf("can't send request: %w", err)
+		return User{}, fmt.Errorf("can't send request: %w", err)
 	}
 	defer response.Body.Close()
 
 	log.Print("finish sender request to history Svc")
 
-	response.Body.Read()
+	err = json.NewDecoder(response.Body).Decode(&us)
+	if err != nil {
+		log.Println("Can't getUserToSvcAuth, json.NewDecoder(response.Body).Decode(&us)", err)
+		return User{}, err
+	}
+
 	switch response.StatusCode {
 	case 200:
 		log.Print("200 request to auth Svc")
-		return nil
+		return us, nil
 	case 400:
 		log.Print("400 request to auth Svc")
-		return fmt.Errorf("bad request is server: %s", addrAuthSvc)
+		return User{}, fmt.Errorf("bad request is server: %s", addrAuthSvc)
 	case 401:
 		log.Print("401 unauthorized to auth Svc")
-		return fmt.Errorf("unauthorized is server: %s", addrAuthSvc)
+		return User{}, fmt.Errorf("unauthorized is server: %s", addrAuthSvc)
 	case 500:
 		log.Print("500 request to auth Svc")
-		return fmt.Errorf("internel server error is server: %s", addrAuthSvc)
+		return User{}, fmt.Errorf("internel server error is server: %s", addrAuthSvc)
 	default:
 		log.Printf("response status code: %s", err)
-		return fmt.Errorf("err: %s", addrAuthSvc)
+		return User{}, fmt.Errorf("err: %s", addrAuthSvc)
 	}
 }
 
 const addrAuthSvc = "http://localhost:9011"
+
+type User struct {
+	Id       int    `json:"id"`
+	Name     string `json:"name"`
+	Login    string `json:"login"`
+	Password string `json:"password"`
+	Phone    int    `json:"phone"`
+}

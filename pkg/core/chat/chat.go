@@ -46,136 +46,136 @@ func (service *Service) Start() {
 // modified timestamp
 
 // CRUD
-func (service *Service) All() (models []ModelOperationsLog, err error) {
-	rows, err := service.pool.Query(context.Background(), `SELECT id, name, number,recipientSender,count, balanceold, balancenew, time, owner_id FROM historyoperationslog;`)
-	if err != nil {
-		return nil, fmt.Errorf("can't get chat from db: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		model := ModelOperationsLog{}
-		err = rows.Scan(
-			&model.Id,
-			&model.Name,
-			&model.Number,
-			&model.RecipientSender,
-			&model.Count,
-			&model.BalanceOld,
-			&model.BalanceNew,
-			&model.Time,
-			&model.OwnerID)
-		if err != nil {
-			return nil, fmt.Errorf("can't get chat from db: %w", err)
-		}
-		models = append(models, model)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("can't get chat from db: %w", err)
-	}
-	return models, nil
-}
-
-func (service *Service) UserShowTransferLogByIdCard(idCard int, idUser int) (model []ModelOperationsLog, err error) {
-	modHistoryLog := ModelOperationsLog{}
-	err = service.pool.QueryRow(context.Background(), `
-SELECT id, name, number, recipientSender, count, balanceold, balancenew, time, owner_id 
-FROM historyoperationslog WHERE id=$1 and owner_id=$2`, idCard, idUser).Scan(
-		&modHistoryLog.Id,
-		&modHistoryLog.Name,
-		&modHistoryLog.Number,
-		&modHistoryLog.RecipientSender,
-		&modHistoryLog.Count,
-		&modHistoryLog.BalanceOld,
-		&modHistoryLog.BalanceNew,
-		&modHistoryLog.Time,
-		&modHistoryLog.OwnerID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("can't get chat from db: %w", err)
-	}
-	model = append(model, modHistoryLog)
-	return model, nil
-}
-
-func (service *Service) AdminShowTransferLogByIdCadr(id int) (model []ModelOperationsLog, err error) {
-	modHistoryLog := ModelOperationsLog{}
-	err = service.pool.QueryRow(context.Background(), `
-SELECT id, name, number, recipientSender, count, balanceold, balancenew, time, owner_id 
-FROM historyoperationslog WHERE id=$1`, id).Scan(
-		&modHistoryLog.Id,
-		&modHistoryLog.Name,
-		&modHistoryLog.Number,
-		&modHistoryLog.RecipientSender,
-		&modHistoryLog.Count,
-		&modHistoryLog.BalanceOld,
-		&modHistoryLog.BalanceNew,
-		&modHistoryLog.Time,
-		&modHistoryLog.OwnerID,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("can't get chat from db: %w", err)
-	}
-	model = append(model, modHistoryLog)
-	return model, nil
-}
-
-func (service *Service) ShowOperationsLogByOwnerId(id int) (models []ModelOperationsLog, err error) {
-	rows, err := service.pool.Query(context.Background(), `
-SELECT id, name, number,recipientSender,count, balanceold, balancenew, time, owner_id 
-FROM historyoperationslog  
-WHERE owner_id= $1`, id)
-	if err != nil {
-		return nil, fmt.Errorf("can't get chat from db: %w", err)
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		model := ModelOperationsLog{}
-		err = rows.Scan(
-			&model.Id,
-			&model.Name,
-			&model.Number,
-			&model.RecipientSender,
-			&model.Count,
-			&model.BalanceOld,
-			&model.BalanceNew,
-			&model.Time,
-			&model.OwnerID)
-		if err != nil {
-			return nil, fmt.Errorf("can't get chat from db: %w", err)
-		}
-		models = append(models, model)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, fmt.Errorf("can't get chat from db: %w", err)
-	}
-	return models, nil
-}
-
-func (service *Service) AddNewHistory(model ModelOperationsLog) (err error) {
-	log.Print("started add new chat")
-	log.Print("add model to db")
-	_, err = service.pool.Exec(context.Background(), `
-	INSERT INTO historyoperationslog(name, number,recipientSender,count, balanceold, balancenew, time, owner_id)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-		model.Name,
-		model.Number,
-		model.RecipientSender,
-		model.Count,
-		model.BalanceOld,
-		model.BalanceNew,
-		model.Time,
-		model.OwnerID,
-	)
-	if err != nil {
-		log.Printf("can't exec insert add chat card: %d", err)
-		return err
-	}
-	log.Print("saved model to db")
-	log.Print("finish add model to db")
-	return nil
-}
+//func (service *Service) All() (models []ModelOperationsLog, err error) {
+//	rows, err := service.pool.Query(context.Background(), `SELECT id, name, number,recipientSender,count, balanceold, balancenew, time, owner_id FROM historyoperationslog;`)
+//	if err != nil {
+//		return nil, fmt.Errorf("can't get chat from db: %w", err)
+//	}
+//	defer rows.Close()
+//
+//	for rows.Next() {
+//		model := ModelOperationsLog{}
+//		err = rows.Scan(
+//			&model.Id,
+//			&model.Name,
+//			&model.Number,
+//			&model.RecipientSender,
+//			&model.Count,
+//			&model.BalanceOld,
+//			&model.BalanceNew,
+//			&model.Time,
+//			&model.OwnerID)
+//		if err != nil {
+//			return nil, fmt.Errorf("can't get chat from db: %w", err)
+//		}
+//		models = append(models, model)
+//	}
+//	if err = rows.Err(); err != nil {
+//		return nil, fmt.Errorf("can't get chat from db: %w", err)
+//	}
+//	return models, nil
+//}
+//
+//func (service *Service) UserShowTransferLogByIdCard(idCard int, idUser int) (model []ModelOperationsLog, err error) {
+//	modHistoryLog := ModelOperationsLog{}
+//	err = service.pool.QueryRow(context.Background(), `
+//SELECT id, name, number, recipientSender, count, balanceold, balancenew, time, owner_id
+//FROM historyoperationslog WHERE id=$1 and owner_id=$2`, idCard, idUser).Scan(
+//		&modHistoryLog.Id,
+//		&modHistoryLog.Name,
+//		&modHistoryLog.Number,
+//		&modHistoryLog.RecipientSender,
+//		&modHistoryLog.Count,
+//		&modHistoryLog.BalanceOld,
+//		&modHistoryLog.BalanceNew,
+//		&modHistoryLog.Time,
+//		&modHistoryLog.OwnerID,
+//	)
+//	if err != nil {
+//		return nil, fmt.Errorf("can't get chat from db: %w", err)
+//	}
+//	model = append(model, modHistoryLog)
+//	return model, nil
+//}
+//
+//func (service *Service) AdminShowTransferLogByIdCadr(id int) (model []ModelOperationsLog, err error) {
+//	modHistoryLog := ModelOperationsLog{}
+//	err = service.pool.QueryRow(context.Background(), `
+//SELECT id, name, number, recipientSender, count, balanceold, balancenew, time, owner_id
+//FROM historyoperationslog WHERE id=$1`, id).Scan(
+//		&modHistoryLog.Id,
+//		&modHistoryLog.Name,
+//		&modHistoryLog.Number,
+//		&modHistoryLog.RecipientSender,
+//		&modHistoryLog.Count,
+//		&modHistoryLog.BalanceOld,
+//		&modHistoryLog.BalanceNew,
+//		&modHistoryLog.Time,
+//		&modHistoryLog.OwnerID,
+//	)
+//	if err != nil {
+//		return nil, fmt.Errorf("can't get chat from db: %w", err)
+//	}
+//	model = append(model, modHistoryLog)
+//	return model, nil
+//}
+//
+//func (service *Service) ShowOperationsLogByOwnerId(id int) (models []ModelOperationsLog, err error) {
+//	rows, err := service.pool.Query(context.Background(), `
+//SELECT id, name, number,recipientSender,count, balanceold, balancenew, time, owner_id
+//FROM historyoperationslog
+//WHERE owner_id= $1`, id)
+//	if err != nil {
+//		return nil, fmt.Errorf("can't get chat from db: %w", err)
+//	}
+//	defer rows.Close()
+//
+//	for rows.Next() {
+//		model := ModelOperationsLog{}
+//		err = rows.Scan(
+//			&model.Id,
+//			&model.Name,
+//			&model.Number,
+//			&model.RecipientSender,
+//			&model.Count,
+//			&model.BalanceOld,
+//			&model.BalanceNew,
+//			&model.Time,
+//			&model.OwnerID)
+//		if err != nil {
+//			return nil, fmt.Errorf("can't get chat from db: %w", err)
+//		}
+//		models = append(models, model)
+//	}
+//	if err = rows.Err(); err != nil {
+//		return nil, fmt.Errorf("can't get chat from db: %w", err)
+//	}
+//	return models, nil
+//}
+//
+//func (service *Service) AddNewHistory(model ModelOperationsLog) (err error) {
+//	log.Print("started add new chat")
+//	log.Print("add model to db")
+//	_, err = service.pool.Exec(context.Background(), `
+//	INSERT INTO historyoperationslog(name, number,recipientSender,count, balanceold, balancenew, time, owner_id)
+//	VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+//		model.Name,
+//		model.Number,
+//		model.RecipientSender,
+//		model.Count,
+//		model.BalanceOld,
+//		model.BalanceNew,
+//		model.Time,
+//		model.OwnerID,
+//	)
+//	if err != nil {
+//		log.Printf("can't exec insert add chat card: %d", err)
+//		return err
+//	}
+//	log.Print("saved model to db")
+//	log.Print("finish add model to db")
+//	return nil
+//}
 
 func (service *Service) AddMassage(model ModelMassage) (err error) {
 	log.Print("started add new Massage")
@@ -200,7 +200,7 @@ func (service *Service) GetMessageByRecipientID(senderID, recipientID int) (mode
 	log.Print("started get Massage")
 	log.Print("get model to db")
 	rows, err := service.pool.Query(context.Background(), `
-	SELECT id, message, sender_id, recipient_id FROM messages WHERE sender_id = $1 AND recipient_id = $2; `,
+	SELECT id, message, sender_id, recipient_id FROM messages WHERE (sender_id = $1 AND recipient_id = $2) OR (sender_id = $2 AND recipient_id = $1); `,
 		senderID,
 		recipientID,
 	)
